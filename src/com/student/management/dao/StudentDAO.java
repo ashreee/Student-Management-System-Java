@@ -3,33 +3,45 @@ package com.student.management.dao;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import com.student.management.model.Student;
+
 import com.student.management.DBConnection;
+import com.student.management.model.Student;
 
 public class StudentDAO {
 
-    // ✅ Add a new student to the database
+    // Add student
     public void addStudent(Student student) {
         String sql = "INSERT INTO students (first_name, last_name, email, phone, course) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, student.getFirstName());
-            stmt.setString(2, student.getLastName());
-            stmt.setString(3, student.getEmail());
-            stmt.setString(4, student.getPhone());
-            stmt.setString(5, student.getCourse());
-            stmt.executeUpdate();
-            System.out.println("✅ Student added successfully!");
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setString(1, student.getFirstName());
+            ps.setString(2, student.getLastName());
+            ps.setString(3, student.getEmail());
+            ps.setString(4, student.getPhone());
+            ps.setString(5, student.getCourse());
+
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected > 0) {
+                ResultSet rs = ps.getGeneratedKeys();
+                if (rs.next()) {
+                    int id = rs.getInt(1);
+                    student.setStudentId(id);
+                    System.out.println("✅ Student added successfully!");
+                    System.out.println("📄 Added Student Details:");
+                    System.out.println(student);
+                }
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // ✅ Retrieve all students
+    // View all students
     public List<Student> getAllStudents() {
-        List<Student> students = new ArrayList<>();
+        List<Student> list = new ArrayList<>();
         String sql = "SELECT * FROM students";
 
         try (Connection conn = DBConnection.getConnection();
@@ -37,55 +49,99 @@ public class StudentDAO {
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Student student = new Student(
-                    rs.getInt("student_id"),
-                    rs.getString("first_name"),
-                    rs.getString("last_name"),
-                    rs.getString("email"),
-                    rs.getString("phone"),
-                    rs.getString("course")
+                Student s = new Student(
+                        rs.getInt("student_id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getString("email"),
+                        rs.getString("phone"),
+                        rs.getString("course")
                 );
-                students.add(student);
+                list.add(s);
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        return students;
+        return list;
     }
 
-    // ✅ Update student details
-    public void updateStudent(Student student) {
-        String sql = "UPDATE students SET first_name=?, last_name=?, email=?, phone=?, course=? WHERE student_id=?";
-
+    // Get student by ID
+    public Student getStudentById(int id) {
+        String sql = "SELECT * FROM students WHERE student_id=?";
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, student.getFirstName());
-            stmt.setString(2, student.getLastName());
-            stmt.setString(3, student.getEmail());
-            stmt.setString(4, student.getPhone());
-            stmt.setString(5, student.getCourse());
-            stmt.setInt(6, student.getStudentId());
-            stmt.executeUpdate();
-            System.out.println("✅ Student updated successfully!");
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return new Student(
+                        rs.getInt("student_id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getString("email"),
+                        rs.getString("phone"),
+                        rs.getString("course")
+                );
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    // Update student
+    public void updateStudent(Student student) {
+        Student existing = getStudentById(student.getStudentId());
+        if (existing == null) {
+            System.out.println("❌ Student ID " + student.getStudentId() + " not found!");
+            return;
+        }
+
+        String sql = "UPDATE students SET first_name=?, last_name=?, email=?, phone=?, course=? WHERE student_id=?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, student.getFirstName());
+            ps.setString(2, student.getLastName());
+            ps.setString(3, student.getEmail());
+            ps.setString(4, student.getPhone());
+            ps.setString(5, student.getCourse());
+            ps.setInt(6, student.getStudentId());
+
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("✅ Student updated successfully!");
+                System.out.println("📄 Updated Student Details:");
+                System.out.println(student);
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // ✅ Delete student by ID
+    // Delete student
     public void deleteStudent(int studentId) {
+        Student existing = getStudentById(studentId);
+        if (existing == null) {
+            System.out.println("❌ Student ID " + studentId + " not found!");
+            return;
+        }
+
         String sql = "DELETE FROM students WHERE student_id=?";
-
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, studentId);
-            stmt.executeUpdate();
-            System.out.println("🗑️ Student deleted successfully!");
+            ps.setInt(1, studentId);
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("🗑️ Student deleted successfully!");
+                System.out.println("📄 Deleted Student Details:");
+                System.out.println(existing);
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
