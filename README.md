@@ -22,7 +22,6 @@ This project demonstrates backend development, database integration, and object-
 - Fully connected to MySQL using JDBC  
 - Modular project structure (DAO, Model, Main)
 
----
 
-## 📂 Project Structure
+
 
