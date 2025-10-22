@@ -151,12 +151,4 @@ Enter Student ID to delete: 1
 🗑️ Student deleted successfully!
 📄 Deleted Student Details:
 Student [studentId=1, firstName=Ziva, lastName=Ezlin, email=ziva_updated@gmail.com, phone=9876543210, course=BE]
-```
 
----
-
-
-
-
-
-Do you want me to make the PDF?
